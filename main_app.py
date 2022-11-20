@@ -21,6 +21,7 @@ async def shut_url_get(request):
 async def shut_url_post(request):
     result = await request.text()
     user_url = result.replace('user_url=', '')
+    user_url_replace = re.sub(r'http[s]?://', '', user_url)
     db = request.app["db"]
     collection = db['shortener']
     url_record = await collection.insert_one({'user_url': user_url})
@@ -32,8 +33,9 @@ async def handle(request):
     db = request.app["db"]
     collection = db['shortener']
     find_url = await collection.find_one({"_id": ObjectId(name_url)})
+    prefix = find_url.get('prefix', 'http')
     select_url = find_url['user_url']
-    raise web.HTTPFound('http://'+select_url)
+    return web.HTTPFound(prefix + '://' + select_url)
 
 db = asyncio.run(setup_db())
 app = web.Application()
